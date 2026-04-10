@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LUXE BARGAIN — Beauty Negotiation Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f7f3ee;--surface:#ffffff;--surface2:#f0ebe3;--border:#e0d8cc;
+  --ink:#1a1510;--ink2:#4a4035;--muted:#9a8f82;
+  --gold:#b8860b;--gold2:#d4a017;--gold3:#f0c040;
+  --rose:#c4536a;--rose2:#e8748a;
+  --green:#2d6a4f;--green2:#40916c;
+  --shadow:0 8px 40px rgba(26,21,16,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;cursor:default}
+
+/* ── BACKGROUND PATTERN ── */
+body::before{
+content:’’;position:fixed;inset:0;
+background-image:
+radial-gradient(circle at 20% 20%,rgba(184,134,11,.06) 0%,transparent 50%),
+radial-gradient(circle at 80% 80%,rgba(196,83,106,.05) 0%,transparent 50%),
+repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(184,134,11,.02) 40px,rgba(184,134,11,.02) 41px);
+pointer-events:none;z-index:0
+}
+
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px;position:relative;z-index:1}
+
+/* ── HEADER ── */
+header{display:grid;grid-template-columns:1fr auto;align-items:center;margin-bottom:48px;gap:16px}
+.logo{font-family:‘Cormorant Garamond’,serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:300;
+letter-spacing:.12em;color:var(–ink);line-height:1}
+.logo em{font-style:italic;color:var(–gold);font-weight:600}
+.logo sup{font-size:.5em;vertical-align:super;font-family:‘Space Mono’,monospace;color:var(–muted);letter-spacing:.05em}
+.rl-badge{background:var(–ink);color:var(–gold3);font-family:‘Space Mono’,monospace;
+font-size:.65rem;padding:6px 14px;border-radius:40px;letter-spacing:.1em;white-space:nowrap}
+
+/* ── PROFIT TICKER ── */
+.ticker-bar{background:var(–ink);color:var(–gold3);font-family:‘Space Mono’,monospace;
+font-size:.75rem;padding:10px 20px;border-radius:12px;margin-bottom:32px;
+display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.ticker-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.ticker-item .t-label{font-size:.6rem;color:#9a8972;letter-spacing:.1em}
+.ticker-item .t-val{color:var(–gold3);font-weight:700}
+.ticker-item .t-val.green{color:#6ecf8e}
+.ticker-item .t-val.red{color:var(–rose2)}
+
+/* ── SHOP GRID ── */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin-bottom:48px}
+
+/* ── PRODUCT CARD ── */
+.product-card{background:var(–surface);border:1px solid var(–border);border-radius:20px;
+overflow:hidden;box-shadow:var(–shadow);transition:transform .25s,box-shadow .25s;position:relative}
+.product-card:hover{transform:translateY(-4px);box-shadow:0 16px 50px rgba(26,21,16,.14)}
+
+.card-img{height:180px;display:flex;align-items:center;justify-content:center;
+font-size:4rem;position:relative;overflow:hidden}
+.card-img::after{content:’’;position:absolute;inset:0;
+background:linear-gradient(180deg,transparent 60%,rgba(255,255,255,.9) 100%)}
+
+.segment-ribbon{position:absolute;top:14px;left:14px;font-family:‘Space Mono’,monospace;
+font-size:.6rem;padding:4px 10px;border-radius:20px;letter-spacing:.08em;font-weight:700;z-index:2}
+.ribbon-premium{background:#2a1a0a;color:var(–gold3)}
+.ribbon-budget{background:#0a2a0a;color:#6ecf8e}
+.ribbon-trend{background:#2a0a1a;color:var(–rose2)}
+.ribbon-frequent{background:#0a1a2a;color:#6fa3ef}
+
+.card-body{padding:20px}
+.product-name{font-family:‘Cormorant Garamond’,serif;font-size:1.35rem;font-weight:600;line-height:1.2}
+.product-brand{font-family:‘Space Mono’,monospace;font-size:.65rem;color:var(–muted);letter-spacing:.1em;margin-top:2px}
+
+.price-range-display{display:flex;justify-content:space-between;margin:14px 0 10px;
+background:var(–surface2);border-radius:10px;padding:10px 14px}
+.pr-item{text-align:center}
+.
+pr-label{font-family:‘Space Mono’,monospace;font-size:.6rem;color:var(–muted);letter-spacing:.08em}
+.pr-val{font-size:1rem;font-weight:600;margin-top:2px}
+.pr-val.min{color:var(–green2)}
+.pr-val.current{color:var(–gold);font-size:1.15rem}
+.pr-val.max{color:var(–rose)}
+
+/* ── NEGOTIATION TRACK ── */
+.neg-track{position:relative;height:6px;background:var(–border);border-radius:6px;margin:12px 0}
+.neg-fill{position:absolute;left:0;top:0;height:100%;border-radius:6px;
+background:linear-gradient(90deg,var(–green2),var(–gold2),var(–rose));transition:width .5s ease}
+.neg-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);
+width:16px;height:16px;border-radius:50%;background:var(–gold);
+border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:left .5s ease}
+
+/* ── OFFER INPUT ── */
+.offer-row{display:flex;gap:8px;margin-top:14px}
+.offer-input{flex:1;background:var(–surface2);border:1.5px solid var(–border);
+color:var(–ink);border-radius:10px;padding:10px 14px;
+font-family:‘Space Mono’,monospace;font-size:.9rem;outline:none;
+transition:border-color .2s}
+.offer-input:focus{border-color:var(–gold)}
+.offer-btn{background:var(–ink);color:var(–gold3);border:none;
+padding:10px 18px;border-radius:10px;font-family:‘Space Mono’,monospace;
+font-size:.75rem;cursor:pointer;letter-spacing:.06em;
+transition:background .2s,transform .1s;white-space:nowrap}
+.offer-btn:hover{background:var(–gold);color:var(–ink);transform:scale(1.02)}
+.offer-btn:active{transform:scale(.97)}
+
+/* ── NEGOTIATION DIALOG ── */
+.neg-dialog{margin-top:12px;min-height:48px;font-size:.82rem;line-height:1.6;
+padding:10px 14px;background:var(–surface2);border-radius:10px;
+border-left:3px solid var(–gold);color:var(–ink2);
+font-family:‘Outfit’,sans-serif;display:none}
+.neg-dialog.show{display:block;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── DEAL ACTIONS ── */
+.deal-row{display:flex;gap:8px;margin-top:10px;display:none}
+.deal-row.show{display:flex}
+.btn-accept{flex:1;background:var(–green2);color:#fff;border:none;padding:10px;
+border-radius:10px;font-family:‘Space Mono’,monospace;font-size:.72rem;
+cursor:pointer;letter-spacing:.06em;transition:background .2s}
+.btn-accept:hover{background:var(–green)}
+.btn-counter{flex:1;background:var(–surface2);color:var(–ink);border:1.5px solid var(–border);
+padding:10px;border-radius:10px;font-family:‘Space Mono’,monospace;
+font-size:.72rem;cursor:pointer;letter-spacing:.06em;transition:all .2s}
+.btn-counter:hover{border-color:var(–gold);background:var(–gold3);color:var(–ink)}
+.btn-walkaway{flex:1;background:transparent;color:var(–muted);border:1.5px solid var(–border);
+padding:10px;border-radius:10px;font-family:‘Space Mono’,monospace;
+font-size:.72rem;cursor:pointer;letter-spacing:.06em;transition:all .2s}
+.btn-walkaway:hover{border-color:var(–rose);color:var(–rose)}
+
+.deal-won{background:linear-gradient(135deg,var(–green2),var(–green));
+color:#fff;text-align:center;padding:14px;border-radius:10px;
+font-family:‘Cormorant Garamond’,serif;font-size:1.1rem;
+font-style:italic;display:none;margin-top:10px}
+.deal-won.show{display:block;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+
+.deal-lost{background:#fff0f0;color:var(–rose);text-align:center;padding:10px;
+border-radius:10px;font-family:‘Space Mono’,monospace;font-size:.7rem;
+display:none;margin-top:10px}
+.deal-lost.show{display:block}
+
+/* ── RL INSIGHT PANEL ── */
+.rl-panel{background:var(–ink);border-radius:20px;padding:28px;color:#f0e8d8;margin-top:8px}
+.rl-panel-title{font-family:‘Cormorant Garamond’,serif;font-size:1.6rem;font-weight:300;
+color:var(–gold3);letter-spacing:.08em;margin-bottom:4px}
+.rl-panel-sub{font-family:‘Space Mono’,monospace;font-size:.65rem;color:#6a6050;
+letter-spacing:.1em;margin-bottom:24px}
+.rl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.
+rl-stat{background:#2a2218;border-radius:12px;padding:16px;border:1px solid #3a3020}
+.rl-stat-label{font-family:‘Space Mono’,monospace;font-size:.6rem;color:#6a6050;letter-spacing:.1em;margin-bottom:6px}
+.rl-stat-val{font-family:‘Cormorant Garamond’,serif;font-size:2rem;font-weight:600}
+.rl-stat-val.gold{color:var(–gold3)}
+.rl-stat-val.green{color:#6ecf8e}
+.rl-stat-val.rose{color:var(–rose2)}
+
+.rl-log{background:#1a1208;border-radius:12px;padding:16px;font-family:‘Space Mono’,monospace;
+font-size:.7rem;line-height:1.8;color:#7a7060;max-height:160px;overflow-y:auto}
+.rl-log .log-entry{border-bottom:1px solid #2a2010;padding:3px 0}
+.rl-log .log-entry:last-child{border:none;color:var(–gold3)}
+
+/* ── Q TABLE VIZ ── */
+.q-viz{margin-top:20px}
+.q-viz-title{font-family:‘Space Mono’,monospace;font-size:.65rem;color:#6a6050;letter-spacing:.1em;margin-bottom:10px}
+.q-row{display:flex;gap:4px;margin-bottom:4px;align-items:center}
+.q-state-label{font-family:‘Space Mono’,monospace;font-size:.6rem;color:#6a6050;width:80px;flex-shrink:0}
+.q-cell{flex:1;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+font-family:‘Space Mono’,monospace;font-size:.6rem;transition:background .4s,color .4s}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(–gold);border-radius:4px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+header{grid-template-columns:1fr}
+.rl-badge{display:none}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+
+<header>
+  <div>
+    <div class="logo">LUXE <em>Bargain</em> <sup>RL ENGINE</sup></div>
+    <div style="font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);margin-top:6px;letter-spacing:.06em">
+      AI-POWERED BEAUTY NEGOTIATION PLATFORM · Q-LEARNING AGENT
+    </div>
+  </div>
+  <div class="rl-badge">⚡ REINFORCEMENT LEARNING ACTIVE</div>
+</header>
+
+<!-- PROFIT TICKER -->
+
+<div class="ticker-bar">
+  <div class="ticker-item"><span class="t-label">TOTAL SESSIONS</span><span class="t-val" id="tk-sessions">0</span></div>
+  <div class="ticker-item"><span class="t-label">DEALS CLOSED</span><span class="t-val green" id="tk-deals">0</span></div>
+  <div class="ticker-item"><span class="t-label">REVENUE EARNED</span><span class="t-val gold" id="tk-revenue">₹0</span></div>
+  <div class="ticker-item"><span class="t-label">AVG MARGIN</span><span class="t-val" id="tk-margin">—</span></div>
+  <div class="ticker-item"><span class="t-label">RL EPISODES</span><span class="t-val" id="tk-episodes">0</span></div>
+  <div class="ticker-item"><span class="t-label">AGENT EPSILON</span><span class="t-val" id="tk-epsilon">1.00</span></div>
+</div>
+
+<!-- PRODUCTS -->
+
+<div class="shop-grid" id="shop-grid"></div>
+
+<!-- RL INSIGHT PANEL -->
+
+<div class="rl-panel">
+  <div class="rl-panel-title">Reinforcement Learning Engine</div>
+  <div class="rl-panel-sub">// Q-LEARNING · EPSILON-GREEDY EXPLORATION · PROFIT MAXIMISATION</div>
+
+  <div class="rl-grid">
+    <div class="rl-stat"><div class="rl-stat-label">TOTAL PROFIT CAPTURED</div><div class="rl-stat-val gold" id="rl-profit">₹0</div></div>
+    <div class="rl-stat"><div class="rl-stat-label">AVG REWARD / EPISODE</div><div class="rl-stat-val green" id="rl-avg-reward">0.00</div></div>
+    <div class="rl-stat"><div class="rl-stat-label">WALKAWAY RATE</div><div class="rl-stat-val rose" id="rl-walkaway">0%</div></div>
+    <div class="rl-stat"><div class="rl-stat-label">AGENT LEARNING RATE</div><div class="rl-stat-val gold">0.15</div></div>
+    <div class="rl-stat"><div class="rl-stat-label">DISCOUNT FACTOR γ</div><div class="rl-stat-val gold">0.90</div></div>
+    <div class="rl-stat"><div class="rl-stat-label">EXPLORATION DECAY</div><div class="rl-stat-val gold">0.97</div></div>
+  </div>
+
+  <!-- Q-TABLE VIZ -->
+
+  <div class="q-viz">
+    <div class="q-viz-title">Q-TABLE SNAPSHOT — AGENT ACTION VALUES (auto-updates per deal)</div>
+    <div id="q-table-viz"></div>
+  </div>
+
+  <!-- RL LOG -->
+
+  <div style="margin-top:16px">
+<div class="q-viz-title">AGENT DECISION LOG</div>
+    <div class="rl-log" id="rl-log"><div class="log-entry">[ SYSTEM ] RL Agent initialised. Epsilon=1.0 · explore mode.</div></div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+
+  <div style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+    <div style="background:#2a2218;border-radius:12px;padding:16px;border:1px solid #3a3020">
+      <div style="font-family:'Space Mono',monospace;font-size:.62rem;color:#6a6050;letter-spacing:.1em;margin-bottom:8px">STATE SPACE</div>
+      <div style="font-size:.82rem;color:#c0b09a;line-height:1.6">Customer segment · Offer ratio (low/mid/high) · Round number · Urgency signal</div>
+    </div>
+    <div style="background:#2a2218;border-radius:12px;padding:16px;border:1px solid #3a3020">
+      <div style="font-family:'Space Mono',monospace;font-size:.62rem;color:#6a6050;letter-spacing:.1em;margin-bottom:8px">ACTION SPACE</div>
+      <div style="font-size:.82rem;color:#c0b09a;line-height:1.6">ACCEPT offer · Counter at mid · Counter near max · Reject &amp; hold · Final offer</div>
+    </div>
+    <div style="background:#2a2218;border-radius:12px;padding:16px;border:1px solid #3a3020">
+      <div style="font-family:'Space Mono',monospace;font-size:.62rem;color:#6a6050;letter-spacing:.1em;margin-bottom:8px">REWARD SIGNAL</div>
+      <div style="font-size:.82rem;color:#c0b09a;line-height:1.6">+R = (deal_price − min_price) / (max − min) · Walkaway = −0.3 · Drag = −0.05/round</div>
+    </div>
+    <div style="background:#2a2218;border-radius:12px;padding:16px;border:1px solid #3a3020">
+      <div style="font-family:'Space Mono',monospace;font-size:.62rem;color:#6a6050;letter-spacing:.1em;margin-bottom:8px">RL GOAL</div>
+      <div style="font-size:.82rem;color:#c0b09a;line-height:1.6">Maximise margin above minimum price while closing deals. Learn per-segment patience strategies.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════
+//  PRODUCT CATALOGUE
+// ═══════════════════════════════════════════════
+const PRODUCTS = [
+  { id:'p1', name:'Velvet Rose Serum', brand:'LUMIÈRE', emoji:'🌹', min:1200, max:2800, segment:'Premium', bg:'#fdf0f3' },
+  { id:'p2', name:'Glow Radiance Kit', brand:'AURA', emoji:'✨', min:600, max:1400, segment:'Trend', bg:'#fffbf0' },
+  { id:'p3', name:'Deep Clean Mask', brand:'PURE', emoji:'🫧', min:300, max:800, segment:'Budget', bg:'#f0fdf4' },
+  { id:'p4', name:'Noir Perfume 50ml', brand:'OBSIDIAN', emoji:'🖤', min:2000, max:5500, segment:'Premium', bg:'#f5f0ff' },
+  { id:'p5', name:'Salon Hair Therapy', brand:'TRESS', emoji:'💆', min:800, max:2200, segment:'Frequent', bg:'#f0f8ff' },
+  { id:'p6', name:'Lip Collection Set', brand:'BLUSH', emoji:'💄', min:400, max:1000, segment:'Trend', bg:'#fff0f5' },
+];
+
+const SEG_RIBBON = {Premium:'ribbon-premium',Budget:'ribbon-budget',Trend:'ribbon-trend',Frequent:'ribbon-frequent'};
+
+// ═══════════════════════════════════════════════
+//  Q-LEARNING AGENT
+// ═══════════════════════════════════════════════
+const RL = {
+  alpha: 0.15,   // learning rate
+  gamma: 0.90,   // discount
+  epsilon: 1.0,  // exploration
+  eps_min: 0.05,
+  eps_decay: 0.97,
+  Q: {},         // Q[state][action] = value
+  episodes: 0,
+  totalReward: 0,
+  deals: 0,
+  walkaways: 0,
+  totalRevenue: 0,
+  totalMargin: 0,
+
+  // States: seg(4) × offerBand(3:low/mid/high) × round(3:early/mid/late) = 36
+  // Actions: 0=accept 1=counter_mid 2=counter_high 3=reject_hold 4=final_offer
+  ACTIONS: ['ACCEPT','COUNTER_MID','COUNTER_HIGH','REJECT_HOLD','FINAL_OFFER'],
+
+  stateKey(seg, offerBand, round){
+    return ${seg}|${offerBand}|${round};
+  },
+
+  getQ(state, action){
+    if(!this.Q[state]) this.Q[state] = {0:0,1:0,2:0,3:0,4:0};
+    return this.Q[state][action] ?? 0;
+  },
+
+  bestAction(state){
+    const vals = [0,1,2,3,4].map(a => this.getQ(state, a));
+    return vals.indexOf(Math.max(...vals));
+  },
+
+  chooseAction(state){
+    if(Math.random() < this.epsilon){
+      return Math.floor(Math.random()*5); // explore
+    }
+return this.bestAction(state); // exploit
+  },
+
+  update(state, action, reward, nextState){
+    if(!this.Q[state]) this.Q[state] = {0:0,1:0,2:0,3:0,4:0};
+    const maxNext = Math.max(...[0,1,2,3,4].map(a=>this.getQ(nextState,a)));
+    const old = this.getQ(state, action);
+    this.Q[state][action] = old + this.alpha * (reward + this.gamma * maxNext - old);
+  },
+
+  decayEpsilon(){
+    this.epsilon = Math.max(this.eps_min, this.epsilon * this.eps_decay);
+    this.episodes++;
+  }
+};
+
+// ═══════════════════════════════════════════════
+//  GLOBAL STATE
+// ═══════════════════════════════════════════════
+const state = {}; // per product card state
+// state[pid] = { round, lastAgentOffer, currentPrice, done, history }
+
+function initProductState(p){
+  state[p.id] = {
+    round: 0,
+    lastAgentOffer: p.max,
+    currentPrice: p.max,
+    done: false,
+    history: []
+  };
+}
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function fmt(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+function offerBand(ratio){ // ratio = (offer-min)/(max-min)
+  if(ratio < 0.33) return 'low';
+  if(ratio < 0.67) return 'mid';
+  return 'high';
+}
+function roundBand(r){
+  if(r <= 1) return 'early';
+  if(r <= 3) return 'mid';
+  return 'late';
+}
+
+// RL agent decides counter offer price from action
+function actionToPrice(action, p, customerOffer, round){
+  const range = p.max - p.min;
+  const s = state[p.id];
+  switch(action){
+    case 0: return customerOffer;                             // accept
+    case 1: return Math.round(p.min + range * 0.55);         // counter mid
+    case 2: return Math.round(p.min + range * 0.78);         // counter high
+    case 3: return Math.round(s.lastAgentOffer);              // hold firm
+    case 4: return Math.round(p.min + range * 0.35);         // final low offer to close
+    default: return Math.round(p.min + range * 0.60);
+  }
+}
+
+// dialogue lines per action
+function agentDialogue(action, agentPrice, p, customerOffer){
+  const margin = Math.round(((agentPrice - p.min)/(p.max-p.min))*100);
+  const lines = {
+    0: [
+      Deal! I'm accepting ₹${Math.round(customerOffer).toLocaleString()} — you drive a hard bargain! 🤝,
+      You know your prices! I'll accept ${fmt(customerOffer)}. Let's wrap this up! ✅,
+    ],
+    1: [
+      I appreciate your offer, but ${fmt(agentPrice)} is the best I can do right now. Meet me halfway?,
+      That's a bit low for something this quality. How about ${fmt(agentPrice)}? Still a great deal for you.,
+    ],
+    2: [
+      This product is worth every rupee. My best offer is ${fmt(agentPrice)} — it's already ${Math.round(100-(agentPrice/p.max*100))}% off MRP.,
+      Mmm, I really can't go lower than ${fmt(agentPrice)}. The ingredients alone cost a fortune!,
+    ],
+    3: [
+      I understand you want a deal, but I have to hold at ${fmt(agentPrice)}. Quality doesn't come cheap.,
+      Let's be honest — at ${fmt(agentPrice)} you're already getting exceptional value. I can't budge further right now.,
+    ],
+    4: [
+      Alright, final offer — ${fmt(agentPrice)}. Take it or leave it, I honestly can't go lower. 🙏,
+      Last chance: ${fmt(agentPrice)}. This is below what I normally sell for. Only because I want you to experience this product!,
+    ],
+  };
+  const pool = lines[action] || lines[1];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER PRODUCTS
+// ═══════════════════════════════════════════════
+function renderProducts(){
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML = '';
+  PRODUCTS.forEach(p => {
+    initProductState(p);
+    const s = state[p.id];
+    grid.innerHTML += `
+    <div class="product-card" id="card-${p.id}">
+      <div class="card-img" style="background:${p.bg}">
+        <span class="segment-ribbon ${SEG_RIBBON[p.segment]}">${p.segment.toUpperCase()}</span>
+        <span style="font-size:3.5rem;position:relative;z-index:1">${p.emoji}</span>
+      </div>
+      <div class="card-body">
+<div class="product-name">${p.name}</div>
+        <div class="product-brand">${p.brand}</div>
+
+        <div class="price-range-display">
+          <div class="pr-item"><div class="pr-label">FLOOR</div><div class="pr-val min">${fmt(p.min)}</div></div>
+          <div class="pr-item"><div class="pr-label">AGENT OFFER</div><div class="pr-val current" id="cur-${p.id}">${fmt(p.max)}</div></div>
+          <div class="pr-item"><div class="pr-label">LIST</div><div class="pr-val max">${fmt(p.max)}</div></div>
+        </div>
+
+        <div class="neg-track">
+          <div class="neg-fill" id="fill-${p.id}" style="width:100%"></div>
+          <div class="neg-thumb" id="thumb-${p.id}" style="left:100%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:.62rem;color:var(--muted);margin-bottom:2px">
+          <span>MIN</span><span id="round-badge-${p.id}" style="color:var(--gold)">ROUND 0</span><span>MAX</span>
+        </div>
+
+        <div class="offer-row">
+          <input class="offer-input" id="inp-${p.id}" type="number" placeholder="Your offer (₹)" min="${p.min}" max="${p.max}"/>
+          <button class="offer-btn" onclick="submitOffer('${p.id}')">OFFER →</button>
+        </div>
+
+        <div class="neg-dialog" id="dialog-${p.id}"></div>
+        <div class="deal-row" id="deal-row-${p.id}">
+          <button class="btn-accept" onclick="acceptDeal('${p.id}')">✓ ACCEPT</button>
+          <button class="btn-counter" onclick="focusOffer('${p.id}')">↩ COUNTER</button>
+          <button class="btn-walkaway" onclick="walkAway('${p.id}')">✕ WALK</button>
+        </div>
+        <div class="deal-won" id="won-${p.id}"></div>
+        <div class="deal-lost" id="lost-${p.id}"></div>
+      </div>
+    </div>`;
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  CORE NEGOTIATION LOGIC
+// ═══════════════════════════════════════════════
+function submitOffer(pid){
+  const p = PRODUCTS.find(x=>x.id===pid);
+  const s = state[pid];
+  if(s.done) return;
+
+  const inp = document.getElementById(`inp-${pid}`);
+  const customerOffer = parseFloat(inp.value);
+
+  if(!customerOffer || customerOffer < p.min * 0.5){
+    showDialog(pid, `⚠️ Offer must be at least ${fmt(Math.round(p.min*0.5))}. That's too low even for me!`);
+    return;
+  }
+  if(customerOffer > p.max){
+    showDialog(pid, `You're offering above list price! I'll accept ${fmt(p.max)} right now. Click ACCEPT! 😄`);
+    document.getElementById(`deal-row-${pid}`).classList.add('show');
+    s.lastAgentOffer = p.max;
+    return;
+  }
+
+  s.round++;
+  RL.totalRevenue; // track
+
+  // Determine RL state
+  const ratio = (customerOffer - p.min) / (p.max - p.min);
+  const ob = offerBand(ratio);
+  const rb = roundBand(s.round);
+  const rlState = RL.stateKey(p.segment, ob, rb);
+
+  // Choose action
+  const action = RL.chooseAction(rlState);
+  const agentPrice = actionToPrice(action, p, customerOffer, s.round);
+  const clampedPrice = Math.max(p.min, Math.min(p.max, agentPrice));
+
+  // Compute immediate reward for this step
+  let reward = 0;
+  if(action === 0){ // accept
+    reward = (customerOffer - p.min) / (p.max - p.min); // normalised margin
+  } else {
+    reward = -0.05; // small cost per round of dragging
+  }
+
+  // Next state
+  const newRatio = (clampedPrice - p.min) / (p.max - p.min);
+  const nextState = RL.stateKey(p.segment, offerBand(newRatio), roundBand(s.round+1));
+  RL.update(rlState, action, reward, nextState);
+
+  s.lastAgentOffer = clampedPrice;
+  updatePriceDisplay(pid, p, clampedPrice);
+
+  const dialogue = agentDialogue(action, clampedPrice, p, customerOffer);
+  showDialog(pid, `<strong>AI Agent:</strong> ${dialogue}`);
+
+  // Round badge
+  document.getElementById(`round-badge-${pid}`).textContent = ROUND ${s.round};
+
+  // Show deal options
+  if(action === 0 || customerOffer >= clampedPrice){
+    // Agent accepts or customer offered >= agent price
+    s.lastAgentOffer = Math.min(customerOffer, clampedPrice);
+    document.getElementById(`deal-row-${pid}`).classList.add('show');
+    logRL(`[${p.
+segment}] Round ${s.round}: Customer ${fmt(customerOffer)} → Agent ACCEPTS ${fmt(s.lastAgentOffer)}`);
+  } else {
+    document.getElementById(`deal-row-${pid}`).classList.add('show');
+    logRL(`[${p.segment}] Round ${s.round}: Customer ${fmt(customerOffer)} → Agent counters ${fmt(clampedPrice)} [${RL.ACTIONS[action]}] ε=${RL.epsilon.toFixed(2)}`);
+  }
+
+  updateTicker();
+  renderQTable();
+  inp.value = '';
+}
+
+function acceptDeal(pid){
+  const p = PRODUCTS.find(x=>x.id===pid);
+  const s = state[pid];
+  if(s.done) return;
+
+  const dealPrice = s.lastAgentOffer;
+  const margin = (dealPrice - p.min) / (p.max - p.min);
+  const reward = margin;
+
+  // Final Q update
+  const rlState = RL.stateKey(p.segment, offerBand(margin), roundBand(s.round));
+  RL.update(rlState, 0, reward, 'terminal');
+
+  RL.deals++;
+  RL.totalRevenue += dealPrice;
+  RL.totalMargin += margin;
+  RL.totalReward += reward;
+  RL.decayEpsilon();
+  s.done = true;
+
+  document.getElementById(`won-${pid}`).textContent =
+    🎉 Deal closed at ${fmt(dealPrice)}! Margin: ${Math.round(margin*100)}% above floor.;
+  document.getElementById(`won-${pid}`).classList.add('show');
+  document.getElementById(`deal-row-${pid}`).classList.remove('show');
+  document.getElementById(`dialog-${pid}`).classList.remove('show');
+
+  logRL(`✅ DEAL CLOSED — ${p.name} at ${fmt(dealPrice)} | Reward: +${reward.toFixed(3)} | ε→${RL.epsilon.toFixed(3)}`);
+  updateTicker();
+  renderQTable();
+
+  // Reset card after 4s for replay
+  setTimeout(()=>resetCard(pid), 4500);
+}
+
+function walkAway(pid){
+  const p = PRODUCTS.find(x=>x.id===pid);
+  const s = state[pid];
+  if(s.done) return;
+
+  const margin = (s.lastAgentOffer - p.min)/(p.max-p.min);
+  const rlState = RL.stateKey(p.segment, offerBand(margin), roundBand(s.round));
+  RL.update(rlState, 3, -0.3, 'terminal'); // penalty
+
+  RL.walkaways++;
+  RL.decayEpsilon();
+  s.done = true;
+
+  document.getElementById(`lost-${pid}`).textContent = '↩ Customer walked away. Agent learns to price better next time.';
+  document.getElementById(`lost-${pid}`).classList.add('show');
+  document.getElementById(`deal-row-${pid}`).classList.remove('show');
+
+  logRL(`❌ WALKAWAY — ${p.name} | Reward: -0.300 | Agent adjusting strategy | ε→${RL.epsilon.toFixed(3)}`);
+  updateTicker();
+  renderQTable();
+  setTimeout(()=>resetCard(pid), 3500);
+}
+
+function focusOffer(pid){
+  document.getElementById(`inp-${pid}`).focus();
+}
+
+function resetCard(pid){
+  const p = PRODUCTS.find(x=>x.id===pid);
+  initProductState(p);
+  document.getElementById(`won-${pid}`).classList.remove('show');
+  document.getElementById(`lost-${pid}`).classList.remove('show');
+  document.getElementById(`deal-row-${pid}`).classList.remove('show');
+  document.getElementById(`dialog-${pid}`).classList.remove('show');
+  document.getElementById(`round-badge-${pid}`).textContent = 'ROUND 0';
+  updatePriceDisplay(pid, p, p.max);
+  document.getElementById(`inp-${pid}`).value = '';
+}
+
+// ═══════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════
+function updatePriceDisplay(pid, p, price){
+  document.getElementById(`cur-${pid}`).textContent = fmt(price);
+  const pct = ((price - p.min)/(p.max - p.min))*100;
+  document.getElementById(`fill-${pid}`).style.width = pct+'%';
+  document.getElementById(`thumb-${pid}`).style.left = pct+'%';
+}
+
+function showDialog(pid, html){
+  const d = document.getElementById(`dialog-${pid}`);
+  d.innerHTML = html;
+  d.classList.remove('show');
+  void d.offsetWidth; // reflow
+  d.classList.add('show');
+}
+
+function logRL(msg){
+  const log = document.getElementById('rl-log');
+  const ts = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.textContent = [${ts}] ${msg};
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+  // keep last 50
+  while(log.children.length > 50) log.removeChild(log.firstChild);
+}
+
+function updateTicker(){
+  const sessions = RL.deals + RL.walkaways;
+  document.
+getElementById('tk-sessions').textContent = sessions;
+  document.getElementById('tk-deals').textContent = RL.deals;
+  document.getElementById('tk-revenue').textContent = fmt(RL.totalRevenue);
+  const avgM = RL.deals > 0 ? Math.round((RL.totalMargin/RL.deals)*100) : 0;
+  document.getElementById('tk-margin').textContent = avgM+'%';
+  document.getElementById('tk-episodes').textContent = RL.episodes;
+  document.getElementById('tk-epsilon').textContent = RL.epsilon.toFixed(3);
+  document.getElementById('rl-profit').textContent = fmt(RL.totalRevenue);
+  const avgR = RL.episodes > 0 ? (RL.totalReward/RL.episodes).toFixed(3) : '0.000';
+  document.getElementById('rl-avg-reward').textContent = avgR;
+  const sessions2 = RL.deals + RL.walkaways;
+  const wPct = sessions2 > 0 ? Math.round((RL.walkaways/sessions2)*100) : 0;
+  document.getElementById('rl-walkaway').textContent = wPct+'%';
+  document.getElementById('tk-epsilon').style.color = RL.epsilon < 0.3 ? '#6ecf8e' : '#f0c040';
+}
+
+// ═══════════════════════════════════════════════
+//  Q-TABLE VISUALISER
+// ═══════════════════════════════════════════════
+const SEGS = ['Premium','Trend','Budget','Frequent'];
+const BANDS = ['low','mid','high'];
+const ROUND_BANDS = ['early','mid','late'];
+
+function renderQTable(){
+  const viz = document.getElementById('q-table-viz');
+  const ACTIONS_SHORT = ['ACC','C-MID','C-HI','HOLD','FINAL'];
+  const colors = ['#40916c','#6fa3ef','#e8748a','#9a8f82','#d4a017'];
+
+  // Show a compact summary: for each segment × offerBand, best action
+  let html = '';
+  // Header
+  html += <div class="q-row"><span class="q-state-label">STATE</span>;
+  ACTIONS_SHORT.forEach((a,i)=>{
+    html += <div class="q-cell" style="background:#2a2218;color:${colors[i]};font-size:.58rem">${a}</div>;
+  });
+  html += </div>;
+
+  SEGS.forEach(seg=>{
+    BANDS.forEach(ob=>{
+      const key = RL.stateKey(seg, ob, 'mid');
+      const vals = [0,1,2,3,4].map(a=>RL.getQ(key,a));
+      const maxV = Math.max(...vals);
+      const minV = Math.min(...vals);
+      html += <div class="q-row"><span class="q-state-label" style="font-size:.56rem">${seg.slice(0,4)}|${ob}</span>;
+      vals.forEach((v,i)=>{
+        const intensity = maxV === minV ? 0 : (v-minV)/(maxV-minV);
+        const bg = maxV===minV ? '#1a1208' : (v===maxV ? ${colors[i]}33 : '#1a1208');
+        const col = v===maxV ? colors[i] : '#4a4030';
+        html += <div class="q-cell" style="background:${bg};color:${col}">${v.toFixed(2)}</div>;
+      });
+      html += </div>;
+    });
+  });
+
+  viz.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+renderProducts();
+renderQTable();
+logRL('[ SYSTEM ] Products loaded. Start bargaining — each deal trains the RL agent!');
+logRL('[ HINT ] Enter your offer below any product and click OFFER → to begin negotiation.');
+
+// Allow Enter key
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && document.activeElement.classList.contains('offer-input')){
+    const pid = document.activeElement.id.replace('inp-','');
+    submitOffer(pid);
+  }
+});
+</script>
+
+</body>
+</html>

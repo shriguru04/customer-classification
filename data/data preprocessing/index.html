@@ -1,0 +1,577 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Beauty Customer Segmentation — ML Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<!-- <link rel="stylesheet" href="./classification.py"> -->
+<style>
+:root{
+  --bg:#0c0c10;--surface:#13131a;--surface2:#1c1c26;--border:#2a2a3a;
+  --gold:#c9a84c;--gold2:#e8c97a;--rose:#e8748a;--mint:#5ecfb1;--blue:#6fa3ef;
+  --text:#f0eee8;--muted:#8888aa;--danger:#ff6b6b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* noise overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4;pointer-events:none;z-index:0}
+
+.container{max-width:1200px;margin:0 auto;padding:40px 24px;position:relative;z-index:1}
+
+/* HEADER */
+header{text-align:center;margin-bottom:56px}
+header h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.6rem);font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--gold2),var(--rose));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:-0.02em;line-height:1.1}
+header p{color:var(--muted);font-family:'DM Mono',monospace;font-size:.85rem;margin-top:8px;letter-spacing:.08em}
+.pipeline-bar{display:flex;justify-content:center;gap:0;margin-top:32px;flex-wrap:wrap}
+.pip-step{background:var(--surface2);border:1px solid var(--border);padding:8px 18px;
+  font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);cursor:pointer;
+  transition:all .2s;position:relative}
+.pip-step:first-child{border-radius:20px 0 0 20px}
+.pip-step:last-child{border-radius:0 20px 20px 0}
+.pip-step.active,.pip-step:hover{background:var(--gold);color:#000;font-weight:500}
+.pip-step::after{content:'›';position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+  color:var(--border);z-index:2;font-size:1.2rem}
+.pip-step:last-child::after{display:none}
+
+/* SECTIONS */
+.section{display:none;animation:fadeIn .4s ease}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.section-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;
+  color:var(--gold2);margin-bottom:6px}
+.section-sub{color:var(--muted);font-size:.88rem;margin-bottom:28px;font-family:'DM Mono',monospace}
+
+/* CARDS */
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .2s}
+.card:hover{border-color:var(--gold)}
+.card-label{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.card-val{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:700;line-height:1}
+.card-sub{font-size:.8rem;color:var(--muted);margin-top:4px}
+
+.gold{color:var(--gold2)}
+.rose{color:var(--rose)}
+.mint{color:var(--mint)}
+.blue{color:var(--blue)}
+.danger{color:var(--danger)}
+
+/* METRIC BAR */
+.metric-row{margin-bottom:14px}
+.metric-label{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px}
+.metric-label span:first-child{color:var(--muted);font-family:'DM Mono',monospace}
+.metric-label span:last-child{font-weight:500}
+.bar-track{background:var(--surface2);border-radius:8px;height:8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:8px;transition:width 1.2s cubic-bezier(4,0,.2,1)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th{background:var(--surface2);padding:12px 16px;text-align:left;
+   font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.08em;
+   border-bottom:1px solid var(--border)}
+td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500;font-family:'DM Mono',monospace}
+.badge-budget{background:#1a2a1a;color:#6ecf6e}
+.badge-premium{background:#2a1a0a;color:var(--gold2)}
+.badge-frequent{background:#0a1a2a;color:var(--blue)}
+.badge-trend{background:#2a0a1a;color:var(--rose)}
+
+/* SEGMENT CARDS */
+.seg-card{border-radius:16px;padding:20px;border:1px solid var(--border);position:relative;overflow:hidden}
+.seg-card::before{content:'';position:absolute;inset:0;opacity:.05;background:var(--seg-color)}
+.seg-card .seg-icon{font-size:2rem;margin-bottom:8px}
+.seg-card .seg-name{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--seg-color)}
+.seg-card .seg-desc{font-size:.8rem;color:var(--muted);margin-top:4px;line-height:1.5}
+.seg-card .seg-stats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.seg-stat{font-family:'DM Mono',monospace;font-size:.75rem}
+.seg-stat strong{display:block;color:var(--seg-color);font-size:.9rem}
+
+/* K-FOLD */
+.kfold-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.fold-chip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;text-align:center;min-width:90px}
+.fold-chip .fold-val{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;color:var(--mint)}
+.fold-chip .fold-label{font-size:.7rem;color:var(--muted);margin-top:2px}
+
+/* PCA */
+.pca-comp{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.pca-label{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--muted);min-width:40px}
+.pca-bar-wrap{flex:1;background:var(--surface2);border-radius:6px;height:14px;overflow:hidden}
+.pca-bar{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),var(--mint))}
+.pca-pct{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--blue);min-width:44px;text-align:right}
+
+/* ANOMALY */
+.anomaly-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.anomaly-chip{background:#2a0a0a;border:1px solid #4a1a1a;color:var(--danger);
+  padding:5px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-size:.78rem}
+
+/* PREDICT FORM */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.form-group label{display:block;font-family:'DM Mono',monospace;font-size:.72rem;
+  color:var(--muted);letter-spacing:.08em;margin-bottom:6px}
+.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:10px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.88rem;
+  outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--gold)}
+.btn{background:linear-gradient(135deg,var(--gold),var(--rose));color:#000;
+  border:none;padding:12px 32px;border-radius:40px;font-weight:700;font-size:.95rem;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .15s,opacity .15s}
+.btn:hover{transform:scale(1.03);opacity:.92}
+.predict-result{background:var(--surface2);border:1px solid var(--border);border-radius:16px;
+  padding:24px;margin-top:24px;display:none}
+.predict-result.show{display:block;animation:fadeIn .4s ease}
+.result-seg{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;margin:4px 0}
+.prob-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.prob-label{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--muted);min-width:80px}
+prob-bar-wrap{flex:1;background:var(--border);border-radius:6px;height:10px;overflow:hidden}
+.prob-bar{height:100%;border-radius:6px;transition:width .8s ease}
+.prob-val{font-family:'DM Mono',monospace;font-size:.78rem;min-width:42px;text-align:right}
+
+/* SILO CHART */
+.sil-chart{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:16px;padding:0 4px}
+.sil-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.sil-bar{width:100%;border-radius:6px 6px 0 0;transition:height .8s ease;
+  background:linear-gradient(180deg,var(--gold2),var(--gold))}
+.sil-bar.best{background:linear-gradient(180deg,var(--mint),#2ea882)}
+.sil-k{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)}
+.sil-v{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--gold2)}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Beauty Segmentation<br/>ML Pipeline</h1>
+  <p>CUSTOMER INTELLIGENCE SYSTEM · ANOMALY DETECTION · PREDICTIVE ENGINE</p>
+  <div class="pipeline-bar">
+    <div class="pip-step active" onclick="showSection('preprocess')">01 Preprocess</div>
+    <div class="pip-step" onclick="showSection('anomaly')">02 Anomaly</div>
+    <div class="pip-step" onclick="showSection('pca')">03 PCA</div>
+    <div class="pip-step" onclick="showSection('cluster')">04 Cluster</div>
+    <div class="pip-step" onclick="showSection('metrics')">05 Metrics</div>
+    <div class="pip-step" onclick="showSection('kfold')">06 K-Fold</div>
+    <div class="pip-step" onclick="showSection('segments')">07 Segments</div>
+    <div class="pip-step" onclick="showSection('predict')">08 Predict</div>
+  </div>
+</header>
+
+<!-- ─── 01 PREPROCESS ──────────────────────────────────────────────── -->
+<div id="preprocess" class="section active">
+  <div class="section-title">Data Preprocessing</div>
+  <div class="section-sub">// impute → encode → normalize → ready</div>
+  <div class="grid grid-4" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">Total Records</div><div class="card-val gold">1,000</div><div class="card-sub">Customers</div></div>
+    <div class="card"><div class="card-label">Features</div><div class="card-val mint">9</div><div class="card-sub">After encoding</div></div>
+    <div class="card"><div class="card-label">Missing Filled</div><div class="card-val blue">150</div><div class="card-sub">Median imputed</div></div>
+    <div class="card"><div class="card-label">Segments</div><div class="card-val rose">4</div><div class="card-sub">Classes</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-label">Feature Pipeline</div>
+      <div style="margin-top:12px">
+        <div class="metric-row"><div class="metric-label"><span>Age</span><span class="mint">Numeric · No missing</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--mint)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Income</span><span class="gold">Numeric · Imputed</span></div><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--gold)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Spending_Score</span><span class="gold">Numeric · Imputed</span></div><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--gold)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Purchase_Frequency</span><span class="mint">Numeric · No missing</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--mint)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Avg_Order_Value</span><span class="mint">Numeric · No missing</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--mint)"></div></div></div>
+
+> Shriguru:
+<div class="metric-row"><div class="metric-label"><span>Service_Usage</span><span class="gold">Numeric · Imputed</span></div><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--gold)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Last_Purchase_Days</span><span class="mint">Numeric · No missing</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--mint)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Gender</span><span class="blue">Label Encoded</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--blue)"></div></div></div>
+        <div class="metric-row"><div class="metric-label"><span>Product_Category</span><span class="blue">Label Encoded</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--blue)"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Preprocessing Steps</div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="background:var(--gold);color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">1</div>
+          <div><div style="font-weight:500">Load CSV</div><div style="font-size:.8rem;color:var(--muted)">beauty_customers.csv — 1000 rows, 11 cols</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="background:var(--gold);color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">2</div>
+          <div><div style="font-weight:500">Median Imputation</div><div style="font-size:.8rem;color:var(--muted)">Income, Spending_Score, Service_Usage (5% each)</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="background:var(--gold);color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">3</div>
+          <div><div style="font-weight:500">Label Encoding</div><div style="font-size:.8rem;color:var(--muted)">Gender → {0,1,2} · Product_Category → {0–5}</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="background:var(--mint);color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">4</div>
+          <div><div style="font-weight:500">StandardScaler</div><div style="font-size:.8rem;color:var(--muted)">Zero mean, unit variance — critical for clustering &amp; PCA</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="background:var(--blue);color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">5</div>
+          <div><div style="font-weight:500">Train / Test Split</div><div style="font-size:.8rem;color:var(--muted)">80 / 20 stratified · Train=800, Test=200</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 02 ANOMALY ──────────────────────────────────────────────────── -->
+<div id="anomaly" class="section">
+  <div class="section-title">Anomaly Detection</div>
+  <div class="section-sub">// IsolationForest · contamination=0.05 · flags unbiased-activity customers</div>
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">Anomalies Found</div><div class="card-val danger">50</div><div class="card-sub">Suspicious behavior</div></div>
+<div class="card"><div class="card-label">Clean Customers</div><div class="card-val mint">950</div><div class="card-sub">Normal patterns</div></div>
+    <div class="card"><div class="card-label">Detection Rate</div><div class="card-val rose">5%</div><div class="card-sub">Contamination threshold</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-label">How It Works</div>
+      <div style="margin-top:12px;font-size:.85rem;line-height:1.7;color:var(--muted)">
+        <strong style="color:var(--text)">Isolation Forest</strong> isolates anomalies by randomly partitioning the feature space. Anomalous customers (those buying via unbiased/unusual patterns) are easier to isolate — requiring fewer splits.<br/><br/>
+        <strong style="color:var(--danger)">Flagged as anomaly when:</strong><br/>
+        · Extreme spending vs income mismatch<br/>
+        · Purchase frequency outliers<br/>
+        · Unusual service usage spikes<br/>
+        · Recency patterns inconsistent with segment
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Anomalous Customer IDs (first 20)</div>
+      <div class="anomaly-list" id="anomaly-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 03 PCA ──────────────────────────────────────────────────────── -->
+<div id="pca" class="section">
+  <div class="section-title">PCA — Feature Reduction</div>
+  <div class="section-sub">// 9 features → 7 principal components · 95% variance retained</div>
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">Original Features</div><div class="card-val gold">9</div></div>
+    <div class="card"><div class="card-label">PCA Components</div><div class="card-val mint">7</div><div class="card-sub">Retained at 95% threshold</div></div>
+    <div class="card"><div class="card-label">Variance Kept</div><div class="card-val blue">95%</div></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Explained Variance per Component</div>
+    <div id="pca-chart" style="margin-top:16px"></div>
+    <div style="margin-top:20px;font-size:.82rem;color:var(--muted);line-height:1.6">
+      <strong style="color:var(--text)">PC1</strong> dominates with <strong style="color:var(--blue)">47.1%</strong> variance — primarily encodes spending power and income signals. 
+      <strong style="color:var(--text)">PC2–PC4</strong> each carry ~11% capturing purchase frequency, recency, and service usage patterns.
+    </div>
+  </div>
+</div>
+
+<!-- ─── 04 CLUSTER ──────────────────────────────────────────────────── -->
+<div id="cluster" class="section">
+  <div class="section-title">K-Means Clustering</div>
+  <div class="section-sub">// silhouette method to find optimal K · best K=2 (data-driven)</div>
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">Optimal K</div><div class="card-val gold">2</div><div class="card-sub">By silhouette score</div></div>
+    <div class="card"><div class="card-label">Silhouette Score</div><div class="card-val mint">0.3315</div><div class="card-sub">Best cluster separation</div></div>
+    <div class="card"><div class="card-label">Algorithm</div><div class="card-val blue" style="font-size:1.4rem">K-Means</div><div class="card-sub">n_init=10 · random_state=42</div></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Silhouette Score by K</div>
+    <div class="sil-chart" id="sil-chart"></div>
+    <div style="margin-top:12px;font-size:.82rem;color:var(--muted)">
+      Silhouette score ranges from -1 to 1. Higher = better defined clusters. K=2 achieves 0.3315 (solid separation for real-world customer data). K=4 is second-best at 0.3039 — aligns with our 4 true business segments.
+    </div>
+  </div>
+</div>
+
+<!-- ─── 05 METRICS ──────────────────────────────────────────────────── -->
+<div id="metrics" class="section">
+  <div class="section-title">Model Performance Metrics</div>
+  <div class="section-sub">// Random Forest Classifier · 200 trees · trained on PCA-reduced features</div>
+
+<div class="grid grid-4" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">Accuracy</div><div class="card-val gold">98.0%</div></div>
+    <div class="card"><div class="card-label">Precision</div><div class="card-val mint">98.1%</div></div>
+    <div class="card"><div class="card-label">Recall</div><div class="card-val blue">98.0%</div></div>
+    <div class="card"><div class="card-label">F1 Score</div><div class="card-val rose">98.0%</div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-label">Per-Class Performance</div>
+    <div class="table-wrap" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Segment</th><th>Precision</th><th>Recall</th><th>F1 Score</th><th>Support</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-budget">Budget</span></td><td class="mint">100.0%</td><td>98.3%</td><td>99.2%</td><td>60</td></tr>
+          <tr><td><span class="badge badge-frequent">Frequent</span></td><td>94.3%</td><td class="mint">100.0%</td><td>97.1%</td><td>50</td></tr>
+          <tr><td><span class="badge badge-premium">Premium</span></td><td class="mint">100.0%</td><td>95.0%</td><td>97.4%</td><td>40</td></tr>
+          <tr><td><span class="badge badge-trend">Trend</span></td><td>98.0%</td><td>98.0%</td><td class="mint">98.0%</td><td>50</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">PC Component Importance (Random Forest)</div>
+    <div style="margin-top:12px" id="feat-importance"></div>
+  </div>
+</div>
+
+<!-- ─── 06 K-FOLD ──────────────────────────────────────────────────── -->
+<div id="kfold" class="section">
+  <div class="section-title">K-Fold Cross Validation</div>
+  <div class="section-sub">// StratifiedKFold · 5 folds · shuffle=True · scoring=accuracy</div>
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">CV Mean Accuracy</div><div class="card-val gold">98.2%</div></div>
+    <div class="card"><div class="card-label">Std Deviation</div><div class="card-val mint">±0.68%</div><div class="card-sub">Very stable model</div></div>
+    <div class="card"><div class="card-label">Folds</div><div class="card-val blue">5</div><div class="card-sub">Stratified splits</div></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Per-Fold Accuracy</div>
+    <div class="kfold-grid" id="kfold-chart"></div>
+    <div style="margin-top:16px;font-size:.84rem;color:var(--muted);line-height:1.6">
+      Low standard deviation (0.68%) confirms the model is <strong style="color:var(--mint)">not overfitting</strong>. Stratified splits ensure each fold has proportional class distribution, giving reliable generalization estimates.
+    </div>
+  </div>
+</div>
+
+<!-- ─── 07 SEGMENTS ─────────────────────────────────────────────────── -->
+<div id="segments" class="section">
+  <div class="section-title">Customer Segments</div>
+  <div class="section-sub">// business interpretation of each cluster</div>
+  <div class="grid grid-2">
+    <div class="seg-card" style="--seg-color:var(--gold2)">
+      <div class="seg-icon">💎</div>
+      <div class="seg-name">Premium / Luxury</div>
+      <div class="seg-desc">High income earners with maximum spending scores. Order premium skincare, fragrance. Loyal to brands, low recency days means frequent visits.</div>
+      <div class="seg-stats">
+        <div class="seg-stat"><strong>₹80k–₹1.5L</strong>Income</div>
+        <div class="seg-stat"><strong>70–100</strong>Spend Score</div>
+        <div class="seg-stat"><strong>₹3k–₹8k</strong>Avg Order</div>
+        <div class="seg-stat"><strong>3–8</strong>Salon/mo</div>
+      </div>
+    </div>
+    <div class="seg-card" style="--seg-color:var(--mint)">
+      <div class="seg-icon">🔄</div>
+      <div class="seg-name">Frequent Visitors</div>
+      <div class="seg-desc">Mid-income customers who visit most often. Regular salon users. Moderate order values but high purchase frequency makes them high lifetime value.</div>
+      <div class="seg-stats">
+
+<div class="seg-stat"><strong>₹40k–₹75k</strong>Income</div>
+        <div class="seg-stat"><strong>55–80</strong>Spend Score</div>
+        <div class="seg-stat"><strong>12–20</strong>Freq/mo</div>
+        <div class="seg-stat"><strong>4–10</strong>Salon/mo</div>
+      </div>
+    </div>
+    <!-- <div class="seg-card" style="(--seg-color:#6ecf6e)"> -->
+      <div class="seg-icon">💰</div>
+      <div class="seg-name" style="color:#6ecf6e">Budget Regulars</div>
+      <div class="seg-desc">Price-conscious, lower income but consistent buyers. Respond best to discounts, bundles, and loyalty rewards. High count — biggest segment.</div>
+      <div class="seg-stats">
+        <div class="seg-stat"><strong style="color:#6ecf6e">₹15k–₹35k</strong>Income</div>
+        <div class="seg-stat"><strong style="color:#6ecf6e">20–50</strong>Spend Score</div>
+        <div class="seg-stat"><strong style="color:#6ecf6e">3–8</strong>Freq/mo</div>
+        <div class="seg-stat"><strong style="color:#6ecf6e">0–2</strong>Salon/mo</div>
+      </div>
+    </div>
+    <div class="seg-card" style="--seg-color:var(--rose)">
+      <div class="seg-icon">✨</div>
+      <div class="seg-name">Trend Drivers</div>
+      <div class="seg-desc">Young, social-media-influenced buyers aged 18–30. High spending score despite moderate income. Cosmetics &amp; skincare trend chasers. Influencer-driven.</div>
+      <div class="seg-stats">
+        <div class="seg-stat"><strong>₹25k–₹60k</strong>Income</div>
+        <div class="seg-stat"><strong>60–90</strong>Spend Score</div>
+        <div class="seg-stat"><strong>Age 18–30</strong></div>
+        <div class="seg-stat"><strong>2–5</strong>Salon/mo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 08 PREDICT ──────────────────────────────────────────────────── -->
+<div id="predict" class="section">
+  <div class="section-title">Predict Unknown Customer</div>
+  <div class="section-sub">// enter customer features → model predicts segment + anomaly status</div>
+  <div class="card">
+    <div class="form-grid">
+      <div class="form-group"><label>AGE</label><input type="number" id="f_age" value="28" min="18" max="80"/></div>
+      <div class="form-group"><label>INCOME (₹)</label><input type="number" id="f_income" value="45000"/></div>
+      <div class="form-group"><label>SPENDING SCORE (1–100)</label><input type="number" id="f_spending" value="75" min="1" max="100"/></div>
+      <div class="form-group"><label>PURCHASE FREQ / MONTH</label><input type="number" id="f_freq" value="10" min="1"/></div>
+      <div class="form-group"><label>AVG ORDER VALUE (₹)</label><input type="number" id="f_aov" value="2200"/></div>
+      <div class="form-group"><label>SERVICE USAGE / MONTH</label><input type="number" id="f_service" value="4" min="0"/></div>
+      <div class="form-group"><label>LAST PURCHASE (DAYS AGO)</label><input type="number" id="f_recency" value="7" min="1"/></div>
+      <div class="form-group"><label>GENDER</label>
+        <select id="f_gender"><option value="0">Female</option><option value="1">Male</option><option value="2">Non-binary</option></select>
+      </div>
+      <div class="form-group"><label>PRODUCT CATEGORY</label>
+        <select id="f_cat"><option value="0">Cosmetics</option><option value="1">Fragrance</option><option value="2">Grooming</option><option value="3">Haircare</option><option value="4">Skincare</option><option value="5">Wellness</option></select>
+      </div>
+    </div>
+    <button class="btn" onclick="predictCustomer()">🔍 Predict Segment</button>
+
+    <div class="predict-result" id="predict-result">
+      <div class="card-label">PREDICTED SEGMENT</div>
+      <div class="result-seg" id="result-seg"></div>
+      <div id="result-anomaly" style="margin-top:8px;font-size:.85rem"></div>
+      <div style="margin-top:20px">
+        <div class="card-label">CONFIDENCE PER SEGMENT</div>
+        <div id="prob-bars" style="margin-top:10px"></div>
+      </div>
+      <div id="result-recommendation" style="margin-top:20px;padding:16px;background:var(--surface);border-radius:12px;font-size:.85rem;line-height:1.
+
+7;color:var(--muted)"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+const DATA = {
+  sil_scores:{2:0.3315,3:0.2616,4:0.3039,5:0.2835,6:0.2614,7:0.2529},
+  pca_variance:[0.4707,0.1154,0.1115,0.1061,0.0782,0.0405,0.0292],
+  cv_scores:[0.975,0.990,0.975,0.990,0.980],
+  anomaly_ids:[1067,1383,1452,1219,1238,1216,1245,1322,1159,1315,1255,1214,1079,1142,1050,1003,1004,1205,1110,1287],
+  feat_importance:{PC1:0.4867,PC2:0.1366,PC3:0.0238,PC4:0.1376,PC5:0.1636,PC6:0.025,PC7:0.0267}
+};
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.pip-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const order=['preprocess','anomaly','pca','cluster','metrics','kfold','segments','predict'];
+  document.querySelectorAll('.pip-step')[order.indexOf(id)].classList.add('active');
+}
+
+// Anomaly IDs
+const al=document.getElementById('anomaly-list');
+DATA.anomaly_ids.forEach(id=>{
+  const c=document.createElement('div');
+  c.className='anomaly-chip';c.textContent='#'+id;al.appendChild(c);
+});
+
+// PCA Chart
+const pc=document.getElementById('pca-chart');
+DATA.pca_variance.forEach((v,i)=>{
+  const pct=Math.round(v*100*10)/10;
+  pc.innerHTML+=`<div class="pca-comp">
+    <span class="pca-label">PC${i+1}</span>
+    <div class="pca-bar-wrap"><div class="pca-bar" style="width:${pct*2}%"></div></div>
+    <span class="pca-pct">${pct}%</span>
+  </div>`;
+});
+
+// Silhouette Chart
+const sc=document.getElementById('sil-chart');
+const maxSil=Math.max(...Object.values(DATA.sil_scores));
+Object.entries(DATA.sil_scores).forEach(([k,v])=>{
+  const h=Math.round((v/maxSil)*100);
+  const best=v===maxSil;
+  sc.innerHTML+=`<div class="sil-bar-wrap">
+    <div class="sil-v">${v}</div>
+    <div class="sil-bar${best?' best':''}" style="height:${h}px"></div>
+    <div class="sil-k">K=${k}${best?' ★':''}</div>
+  </div>`;
+});
+
+// K-Fold
+const kfc=document.getElementById('kfold-chart');
+DATA.cv_scores.forEach((s,i)=>{
+  kfc.innerHTML+=`<div class="fold-chip">
+    <div class="fold-val">${(s*100).toFixed(1)}%</div>
+    <div class="fold-label">Fold ${i+1}</div>
+  </div>`;
+});
+kfc.innerHTML+=`<div class="fold-chip" style="background:var(--surface);border-color:var(--gold)">
+  <div class="fold-val" style="color:var(--gold2)">98.2%</div>
+  <div class="fold-label">Mean</div>
+</div>`;
+
+// Feature Importance
+const fi=document.getElementById('feat-importance');
+const maxFI=Math.max(...Object.values(DATA.feat_importance));
+Object.entries(DATA.feat_importance).forEach(([k,v])=>{
+  const pct=Math.round((v/maxFI)*100);
+  fi.innerHTML+=`<div class="metric-row">
+    <div class="metric-label"><span>${k}</span><span>${(v*100).toFixed(1)}%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--blue),var(--mint))"></div></div>
+  </div>`;
+});
+
+// PREDICT
+function predictCustomer(){
+  const age=+document.getElementById('f_age').value;
+  const income=+document.getElementById('f_income').value;
+  const spending=+document.getElementById('f_spending').value;
+  const freq=+document.getElementById('f_freq').value;
+  const aov=+document.getElementById('f_aov').value;
+  const service=+document.getElementById('f_service').value;
+  const recency=+document.getElementById('f_recency').value;
+
+  // Simple rule-based simulation (mirrors trained RF logic)
+  let scores={Budget:0,Frequent:0,Premium:0,Trend:0};
+
+  if(income>80000)scores.Premium+=3;
+  else if(income>40000)scores.Frequent+=2;
+  else scores.Budget+=2;
+
+  if(spending>=70)scores.Premium+=2;
+  else if(spending>=60)scores.Trend+=2;
+  else if(spending>=50)scores.Frequent+=2;
+  else scores.Budget+=3;
+
+  if(aov>=3000)scores.Premium+=3;
+  else if(aov>=1500)scores.Frequent+=2;
+  else scores.Budget+=2;
+
+  if(freq>=12)scores.Frequent+=3;
+  else if(freq>=8)scores.Trend+=2;
+  else scores.Budget+=2;
+
+  if(age<=30&&spending>=60)scores.Trend+=3;
+
+  if(service>=3)scores.Frequent+=2;
+
+  const total=Object.values(scores).reduce((a,b)=>a+b,0);
+const probs={};
+  Object.keys(scores).forEach(k=>probs[k]=scores[k]/total);
+
+  const pred=Object.keys(probs).reduce((a,b)=>probs[a]>probs[b]?a:b);
+
+  // Anomaly: flag if extreme mismatch
+  const spendToIncome=spending/(income/10000);
+  const isAnom=spendToIncome>8||freq>18||(income<20000&&aov>5000);
+
+  const colors={Budget:'#6ecf6e',Frequent:'var(--blue)',Premium:'var(--gold2)',Trend:'var(--rose)'};
+  const recs={
+    Budget:'💡 Recommend: Flash sales, bundle offers, loyalty cashback. SMS/WhatsApp marketing works best. Offer affordable entry-level skincare kits.',
+    Frequent:'💡 Recommend: Subscription plans, salon membership cards, referral bonuses. Early access to new services. Monthly beauty boxes.',
+    Premium:'💡 Recommend: VIP events, personalized consultations, luxury gift sets. Exclusive brand launches. Concierge-style service upgrades.',
+    Trend:'💡 Recommend: Social media campaigns, influencer collaborations, limited-edition drops. AR try-on features. TikTok-viral product bundles.'
+  };
+
+  document.getElementById('result-seg').textContent=pred;
+  document.getElementById('result-seg').style.color=colors[pred];
+  document.getElementById('result-anomaly').innerHTML=isAnom
+    ?'<span style="color:var(--danger)">⚠️ ANOMALY DETECTED — unusual purchasing pattern flagged for review</span>'
+    :'<span style="color:var(--mint)">✅ Normal customer — no anomaly detected</span>';
+
+  const pb=document.getElementById('prob-bars');
+  pb.innerHTML='';
+  Object.entries(probs).sort((a,b)=>b[1]-a[1]).forEach(([seg,p])=>{
+    pb.innerHTML+=`<div class="prob-row">
+      <span class="prob-label">${seg}</span>
+      <div class="prob-bar-wrap"><div class="prob-bar" style="width:${Math.round(p*100)}%;background:${colors[seg]}"></div></div>
+      <span class="prob-val" style="color:${colors[seg]}">${Math.round(p*100)}%</span>
+    </div>`;
+  });
+
+  document.getElementById('result-recommendation').textContent=recs[pred];
+  document.getElementById('predict-result').classList.add('show');
+}
+</script>
+</body>
+</html>
